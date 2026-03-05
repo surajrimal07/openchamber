@@ -6,20 +6,21 @@ services:
     image: openchamber:local
     container_name: openchamber
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./data/openchamber:/home/openchamber/.config/openchamber
-      - ./data/opencode/share:/home/openchamber/.local/share/opencode
-      - ./data/opencode/state:/home/openchamber/.local/state/opencode
-      - ./data/opencode/config:/home/openchamber/.config/opencode
-      - ./data/ssh:/home/openchamber/.ssh
-      - ./workspaces:/home/openchamber/workspaces
-    #environment:
-    # UI_PASSWORD: your_secure_password_here  # Uncomment to set UI password
-    # CF_TUNNEL: true  # Enable Cloudflare Tunnel (true/qr/password)
-    # OH_MY_OPENCODE: true # enable oh-my-opencode
-    # OPENCODE_HOST: http://172.17.0.1:4096 # Connect to external OpenCode server
-    # OPENCODE_SKIP_START: true # skip start opencode
+      - /home/suraj/openchamber/openchamber:/home/openchamber/.config/openchamber
+      - /home/suraj/openchamber/opencode/share:/home/openchamber/.local/share/opencode
+      - /home/suraj/openchamber/opencode/state:/home/openchamber/.local/state/opencode
+      - /home/suraj/openchamber/opencode/config:/home/openchamber/.config/opencode
+      - /home/suraj/openchamber/ssh:/home/openchamber/.ssh
+      - /home/suraj/projects:/home/openchamber/workspaces
+    environment:
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - UI_PASSWORD=${UI_PASSWORD}
+      - CF_TUNNEL=${CF_TUNNEL}
+      - OH_MY_OPENCODE=${OH_MY_OPENCODE}
+      - OPENCODE_HOST=${OPENCODE_HOST}
+      - OPENCODE_SKIP_START=${OPENCODE_SKIP_START}
     restart: unless-stopped

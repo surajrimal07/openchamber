@@ -3,9 +3,18 @@ FROM ubuntu:24.04 AS base
 WORKDIR /app
 
 # Install build dependencies in base stage
-RUN pacman -Sy --noconfirm --needed bun  && \
-  pacman -Scc --noconfirm
+RUN apt update && \
+    apt install -y curl git nodejs npm python3 openssh-client less && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install Bun (ARM64 compatible)
+RUN curl -fsSL https://bun.sh/install | bash
+
+# Add Bun to PATH
+ENV BUN_INSTALL="/root/.bun"
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+
+# ----------------------------------------------------------------------
 FROM base AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
@@ -13,17 +22,23 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/web/package.json ./packages/web/
 COPY packages/desktop/package.json ./packages/desktop/
 COPY packages/vscode/package.json ./packages/vscode/
+
+# Install JS dependencies using Bun
 RUN bun install --frozen-lockfile --ignore-scripts
 
+# ----------------------------------------------------------------------
 FROM deps AS builder
 WORKDIR /app
 COPY . .
 RUN bun run build:web
 
+# ----------------------------------------------------------------------
 FROM base AS runtime
 
-RUN pacman -Sy --noconfirm --needed base-devel python openssh cloudflared git nodejs npm less && \
-  pacman -Scc --noconfirm
+# Install runtime dependencies
+RUN apt update && \
+    apt install -y python3 openssh-client cloudflared git nodejs npm less && \
+    rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 
@@ -33,13 +48,16 @@ RUN useradd -m -s /bin/bash openchamber
 # Switch to openchamber user
 USER openchamber
 
+# Set npm prefix for user installs
 ENV NPM_CONFIG_PREFIX=/home/openchamber/.npm-global
 ENV PATH=${NPM_CONFIG_PREFIX}/bin:${PATH}
 
-RUN npm config set prefix /home/openchamber/.npm-global && mkdir -p /home/openchamber/.npm-global && \
-  mkdir -p /home/openchamber/.local /home/openchamber/.config /home/openchamber/.ssh && \
-  npm install -g opencode-ai
+RUN mkdir -p /home/openchamber/.npm-global \
+    /home/openchamber/.local /home/openchamber/.config /home/openchamber/.ssh && \
+    npm config set prefix /home/openchamber/.npm-global && \
+    npm install -g opencode-ai
 
+# ----------------------------------------------------------------------
 WORKDIR /home/openchamber
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/packages/web/node_modules ./packages/web/node_modules

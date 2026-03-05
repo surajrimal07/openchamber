@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM archlinux:latest AS base
+FROM ghcr.io/menci/archlinuxarm:base-devel-20241220.12426491116 AS base
 WORKDIR /app
 
 # Install build dependencies in base stage

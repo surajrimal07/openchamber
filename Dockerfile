@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM ghcr.io/archlinux/archlinux:latest AS base
+FROM ubuntu:24.04 AS base
 WORKDIR /app
 
 # Install build dependencies in base stage
